@@ -40,11 +40,17 @@ export class WeatherTableComponent implements OnInit {
   readonly weatherData = signal<WeatherResponse | null>(null);
 
   ngOnInit() {
-    const { city } = this.#activatedRoute.snapshot.queryParams;
+    const { city, appid } = this.#activatedRoute.snapshot.queryParams;
 
     if (city) {
       this.formGroup.controls.city.setValue(city);
+    }
 
+    if (appid) {
+      this.formGroup.controls.appid.setValue(appid);
+    }
+
+    if (city && appid) {
       this.onSubmit();
     }
   }
@@ -54,7 +60,7 @@ export class WeatherTableComponent implements OnInit {
       return;
     }
 
-    this.updateQuery({ city: this.formGroup.controls.city.value });
+    this.updateQuery({ city: this.formGroup.controls.city.value, appid: this.formGroup.controls.appid.value });
 
     this.#tokenService.token.set(this.formGroup.controls.appid.value);
 
