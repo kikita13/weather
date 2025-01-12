@@ -1,7 +1,24 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { catchError, switchMap, throwError } from 'rxjs';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  OnInit,
+  runInInjectionContext,
+  Signal,
+  signal,
+} from '@angular/core';
+import {
+  FormControl,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { catchError, debounceTime, map, switchMap, throwError } from 'rxjs';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -40,8 +57,18 @@ export class WeatherTableComponent implements OnInit {
   readonly selectedCity = signal<string>('');
   readonly weatherData = signal<WeatherResponse | null>(null);
 
+  readonly cityValueChanges = toSignal(
+    this.formGroup.controls.city.valueChanges.pipe(debounceTime(300)),
+  );
+
+  cityAutoCompleteList = signal<string[]>([]);
+
   ngOnInit() {
     const { city, appid } = this.#activatedRoute.snapshot.queryParams;
+
+    this.formGroup.controls.appid.valueChanges
+      .pipe(takeUntilDestroyed(this.#destroyRef), debounceTime(300))
+      .subscribe(token => this.#tokenService.token.set(token || ''));
 
     if (city) {
       this.formGroup.controls.city.setValue(city);
@@ -49,11 +76,36 @@ export class WeatherTableComponent implements OnInit {
 
     if (appid) {
       this.formGroup.controls.appid.setValue(appid);
+      this.#tokenService.token.set(appid);
     }
 
     if (city && appid) {
       this.onSubmit();
     }
+
+    this.formGroup.controls.city.valueChanges
+      .pipe(
+        debounceTime(300),
+        switchMap(value =>
+          value
+            ? this.#geoLocationService
+                .get({ q: value, limit: 10 })
+                .pipe(
+                  map(cities =>
+                    cities.map(city =>
+                      city.local_names ? Object.values(city.local_names) : [city.name],
+                    ),
+                  ),
+                )
+            : [],
+        ),
+        catchError(err => {
+          this.cityAutoCompleteList.set([]);
+          return [];
+        }),
+        takeUntilDestroyed(this.#destroyRef),
+      )
+      .subscribe(cities => this.cityAutoCompleteList.update(() => [...new Set(cities.flat())]));
   }
 
   onSubmit() {
@@ -61,45 +113,49 @@ export class WeatherTableComponent implements OnInit {
       return;
     }
 
-    this.updateQuery({ city: this.formGroup.controls.city.value, appid: this.formGroup.controls.appid.value });
-
-    this.#tokenService.token.set(this.formGroup.controls.appid.value);
-
-    this.#geoLocationService.get({
-      q: this.formGroup.controls.city.value,
-      limit: 1,
-    }).pipe(
-      takeUntilDestroyed(this.#destroyRef),
-      catchError(err => {
-        if (err?.status === 404) {
-          this.errorCode.set('City not found');
-        } else {
-          this.errorCode.set(err?.statusText || 'Unknown Error');
-        }
-        return throwError(() => err);
-      }),
-      switchMap(city => {
-        if (!city || city.length === 0) {
-          this.errorCode.set('City not found');
-          return throwError(() => 'City not found');
-        }
-
-        return this.#weatherService.get({
-          cnt: this.#countQuery,
-          lon: city[0].lon,
-          lat: city[0].lat,
-          units: 'metric',
-        });
-      }),
-      catchError(err => {
-        this.errorCode.set(typeof err === 'string' ? err : err.statusText);
-        this.weatherData.set(null);
-        return throwError(() => err);
-      }),
-    ).subscribe(weather => {
-      this.weatherData.set(weather);
-      this.selectedCity.set(weather.city.name);
+    this.updateQuery({
+      city: this.formGroup.controls.city.value,
+      appid: this.formGroup.controls.appid.value,
     });
+
+    this.#geoLocationService
+      .get({
+        q: this.formGroup.controls.city.value,
+        limit: 1,
+      })
+      .pipe(
+        takeUntilDestroyed(this.#destroyRef),
+        catchError(err => {
+          if (err?.status === 404) {
+            this.errorCode.set('City not found');
+          } else {
+            this.errorCode.set(err?.statusText || 'Unknown Error');
+          }
+          return throwError(() => err);
+        }),
+        switchMap(city => {
+          if (!city || city.length === 0) {
+            this.errorCode.set('City not found');
+            return throwError(() => 'City not found');
+          }
+
+          return this.#weatherService.get({
+            cnt: this.#countQuery,
+            lon: city[0].lon,
+            lat: city[0].lat,
+            units: 'metric',
+          });
+        }),
+        catchError(err => {
+          this.errorCode.set(typeof err === 'string' ? err : err.statusText);
+          this.weatherData.set(null);
+          return throwError(() => err);
+        }),
+      )
+      .subscribe(weather => {
+        this.weatherData.set(weather);
+        this.selectedCity.set(weather.city.name);
+      });
   }
 
   updateQuery(queryParams: Record<string, string | number>) {

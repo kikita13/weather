@@ -5,7 +5,20 @@
     <div class="field">
       <label for="city">City</label>
 
-      <input type="text" id="city" placeholder="City" formControlName="city" />
+      <input
+        type="text"
+        list="autoCompleteList"
+        autocomplete="on"
+        id="city"
+        placeholder="City"
+        formControlName="city"
+      />
+
+      <datalist id="autoCompleteList">
+        @for (option of cityAutoCompleteList(); track option) {
+          <option>{{ option }}</option>
+        }
+      </datalist>
     </div>
 
     <div class="field">
@@ -23,14 +36,14 @@
 
       <table>
         <thead>
-        <tr>
-          <th>Time</th>
-          <th>Temperature</th>
-          <th>Feels Like</th>
-          <th>Weather</th>
-          <th>Precipitation</th>
-          <th>Cloudiness</th>
-        </tr>
+          <tr>
+            <th>Time</th>
+            <th>Temperature</th>
+            <th>Feels Like</th>
+            <th>Weather</th>
+            <th>Precipitation</th>
+            <th>Cloudiness</th>
+          </tr>
         </thead>
 
         <tbody>
@@ -40,7 +53,7 @@
               <td>{{ item.main.temp }}°C</td>
               <td>{{ item.main.feels_like }}°C</td>
               <td>
-                <img [src]="item.weather[0].icon | iconUrl" [alt]="item.weather[0].main">
+                <img [src]="item.weather[0].icon | iconUrl" [alt]="item.weather[0].main" />
               </td>
               <td>{{ item.pop }}%</td>
               <td>{{ item.clouds.all }}%</td>
