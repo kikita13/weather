@@ -1,0 +1,1 @@
+export * from './weather-table/weather-table.component';

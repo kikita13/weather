@@ -1,0 +1,53 @@
+<div class="weather-wrapper">
+  <span class="title">Weather</span>
+
+  <form [formGroup]="formGroup" class="inputs" (ngSubmit)="onSubmit()">
+    <div class="field">
+      <label for="city">City</label>
+
+      <input type="text" id="city" placeholder="City" formControlName="city" />
+    </div>
+
+    <div class="field">
+      <label for="city">Token</label>
+
+      <input type="text" id="appid" placeholder="Token" formControlName="appid" />
+    </div>
+
+    <button [disabled]="formGroup.invalid" type="submit">Search</button>
+  </form>
+
+  @if (weatherData(); as data) {
+    <div class="table-wrapper">
+      <div class="title">{{ selectedCity() }}</div>
+
+      <table>
+        <thead>
+        <tr>
+          <th>Time</th>
+          <th>Temperature</th>
+          <th>Feels Like</th>
+          <th>Weather</th>
+          <th>Precipitation</th>
+          <th>Cloudiness</th>
+        </tr>
+        </thead>
+
+        <tbody>
+          @for (item of data.list; track item.dt) {
+            <tr>
+              <td>{{ item.dt_txt | date: 'dd.MM.yy HH:mm' }}</td>
+              <td>{{ item.main.temp }}°C</td>
+              <td>{{ item.main.feels_like }}°C</td>
+              <td>
+                <img [src]="getIconUrl(item.weather[0].icon)" [alt]="item.weather[0].main">
+              </td>
+              <td>{{ item.pop }}%</td>
+              <td>{{ item.clouds.all }}%</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

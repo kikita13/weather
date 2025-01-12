@@ -1,0 +1,81 @@
+.weather-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+
+  .title {
+    font-size: 32px;
+  }
+
+  form {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+
+    .field {
+      display: flex;
+      flex-direction: column;
+
+      input {
+        outline: none;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        padding: 5px 10px;
+      }
+    }
+
+    button {
+      background-color: #ccc;
+      outline: none;
+      padding: 5px 10px;
+      align-self: end;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease-in-out;
+
+      &:not(:disabled) {
+        &:hover {
+          background-color: #ddd;
+        }
+
+        &:active {
+          background-color: #eee;
+        }
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .table-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    background: #ccc;
+    padding: 20px;
+    border-radius: 10px;
+
+    table {
+      border-collapse: collapse;
+
+      thead {
+        background-color: #eeeeee;
+      }
+
+      th, td {
+        padding: 5px 10px;
+        text-align: center;
+        border: 1px solid #000;
+      }
+
+      tbody tr:nth-child(even) {
+        background-color: #eeeeee;
+      }
+    }
+  }
+}
