@@ -7,11 +7,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { GeoLocationService, TokenService, WeatherService } from '@services';
 import { WeatherResponse } from '@models';
+import { IconUrlPipe } from '@pipes';
 
 @Component({
   selector: 'app-weather-table',
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule, DatePipe],
+  imports: [ReactiveFormsModule, FormsModule, DatePipe, IconUrlPipe],
   templateUrl: './weather-table.component.html',
   styleUrl: './weather-table.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -99,10 +100,6 @@ export class WeatherTableComponent implements OnInit {
       this.weatherData.set(weather);
       this.selectedCity.set(weather.city.name);
     });
-  }
-
-  getIconUrl(iconCode: string) {
-    return `https://openweathermap.org/img/wn/${iconCode}.png`;
   }
 
   updateQuery(queryParams: Record<string, string | number>) {

@@ -40,7 +40,7 @@
               <td>{{ item.main.temp }}°C</td>
               <td>{{ item.main.feels_like }}°C</td>
               <td>
-                <img [src]="getIconUrl(item.weather[0].icon)" [alt]="item.weather[0].main">
+                <img [src]="item.weather[0].icon | iconUrl" [alt]="item.weather[0].main">
               </td>
               <td>{{ item.pop }}%</td>
               <td>{{ item.clouds.all }}%</td>
