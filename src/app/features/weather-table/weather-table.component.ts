@@ -1,12 +1,12 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, switchMap, throwError } from 'rxjs';
+import { DatePipe } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { GeoLocationService, TokenService, WeatherService } from '@services';
 import { WeatherResponse } from '@models';
-import { DatePipe } from '@angular/common';
-
 
 @Component({
   selector: 'app-weather-table',
@@ -16,11 +16,13 @@ import { DatePipe } from '@angular/common';
   styleUrl: './weather-table.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class WeatherTableComponent {
+export class WeatherTableComponent implements OnInit {
   readonly #tokenService = inject(TokenService);
   readonly #weatherService = inject(WeatherService);
   readonly #geoLocationService = inject(GeoLocationService);
   readonly #destroyRef = inject(DestroyRef);
+  readonly #router = inject(Router);
+  readonly #activatedRoute = inject(ActivatedRoute);
 
   readonly formGroup = new FormGroup({
     appid: new FormControl<string>('', Validators.required),
@@ -37,10 +39,22 @@ export class WeatherTableComponent {
   readonly selectedCity = signal<string>('');
   readonly weatherData = signal<WeatherResponse | null>(null);
 
+  ngOnInit() {
+    const { city } = this.#activatedRoute.snapshot.queryParams;
+
+    if (city) {
+      this.formGroup.controls.city.setValue(city);
+
+      this.onSubmit();
+    }
+  }
+
   onSubmit() {
     if (!this.formGroup.controls.appid.value || !this.formGroup.controls.city.value) {
       return;
     }
+
+    this.updateQuery({ city: this.formGroup.controls.city.value });
 
     this.#tokenService.token.set(this.formGroup.controls.appid.value);
 
@@ -81,8 +95,15 @@ export class WeatherTableComponent {
     });
   }
 
-
   getIconUrl(iconCode: string) {
     return `https://openweathermap.org/img/wn/${iconCode}.png`;
+  }
+
+  updateQuery(queryParams: Record<string, string | number>) {
+    this.#router.navigate([], {
+      relativeTo: this.#activatedRoute,
+      queryParams,
+      replaceUrl: true,
+    });
   }
 }
